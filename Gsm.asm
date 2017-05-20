@@ -1,0 +1,350 @@
+T2CON   EQU   0C8H
+RCAP2L  EQU   0CAH
+RCAP2H  EQU   0CBH
+TL2     EQU   0CCH
+TH2     EQU   0CDH
+	
+ORG 000H
+      
+MOV rcap2h,#0FFH
+MOV RCAP2L,#0FDH
+SETB T2CON.5
+SETB T2CON.4
+MOV SCON,#50H          
+SETB 0CAH
+
+RS EQU P3.6
+RW EQU P3.5
+E  EQU P3.4
+	
+SETB P3.7 //VEHICLE ON        
+ACALL DINT  //CONFIGURE LCD
+
+MOV A,#"A"	//AT CHECK
+ACALL SEND
+MOV A,#"T"
+ACALL SEND
+MOV A,#0DH
+ACALL SEND
+ACALL DELAY1
+
+
+MOV A,#"A"	//CONFIGURE TEXT MODE USING AT+CMGF=1
+ACALL SEND
+MOV A,#"T"
+ACALL SEND
+MOV A,#"+"
+ACALL SEND
+MOV A,#"C"
+ACALL SEND
+MOV A,#"M"
+ACALL SEND
+MOV A,#"G"
+ACALL SEND
+MOV A,#"F"
+ACALL SEND
+MOV A,#"="
+ACALL SEND
+MOV A,#"1"
+ACALL SEND
+MOV A,#0DH
+ACALL SEND
+ACALL DELAY1
+
+
+MOV A,#"A"	//SEND TEXT MESSAGE USING AT+CMGS="+919429375289" HELLO CTRL+Z
+ACALL SEND
+MOV A,#"T"
+ACALL SEND
+MOV A,#"+"
+ACALL SEND
+MOV A,#"C"
+ACALL SEND
+MOV A,#"M"
+ACALL SEND
+MOV A,#"G"
+ACALL SEND
+MOV A,#"S"
+ACALL SEND
+MOV A,#"="
+ACALL SEND
+MOV A,#34D
+ACALL SEND
+MOV A,#"+"
+ACALL SEND
+MOV A,#"9"
+ACALL SEND
+MOV A,#"1"
+ACALL SEND
+MOV A,#"9"
+ACALL SEND
+MOV A,#"4"
+ACALL SEND
+MOV A,#"2"
+ACALL SEND
+MOV A,#"9"
+ACALL SEND
+MOV A,#"3"
+ACALL SEND
+MOV A,#"7"
+ACALL SEND
+MOV A,#"5"
+ACALL SEND
+MOV A,#"2"
+ACALL SEND
+MOV A,#"8"
+ACALL SEND
+MOV A,#"9"
+ACALL SEND
+MOV A,#34D
+ACALL SEND
+MOV A,#0DH
+ACALL SEND
+ACALL DELAY
+ACALL DELAY
+ACALL DELAY
+
+
+MOV A,#"H"
+ACALL SEND
+MOV A,#"E"
+ACALL SEND
+MOV A,#"L"
+ACALL SEND
+MOV A,#"L"
+ACALL SEND
+MOV A,#"O"
+ACALL SEND
+ACALL DELAY
+ACALL DELAY
+
+MOV A,#1AH
+ACALL SEND
+
+MOV A,#0DH
+ACALL SEND
+
+ACALL DELAY1
+
+
+ACALL DINT     
+ACALL TEXT1
+ACALL DELAY1
+
+MOV A,#"A"	//RESET TO CALL MODE USING AT&F
+ACALL SEND
+MOV A,#"T"
+ACALL SEND
+MOV A,#"&"
+ACALL SEND
+MOV A,#"F"
+ACALL SEND
+MOV A,#0DH
+ACALL SEND
+ACALL DELAY1
+
+MOV A,#"A"	//AUTO ANSWERING SET USING ATS0=2
+ACALL SEND
+MOV A,#"T"
+ACALL SEND
+MOV A,#"S"
+ACALL SEND
+MOV A,#"0"
+ACALL SEND
+MOV A,#"="
+ACALL SEND
+MOV A,#"2"
+ACALL SEND
+MOV A,#0DH
+ACALL SEND
+ACALL DELAY1
+
+ACALL GET //IF CALL RECEIVED
+CLR P3.7	//VEHICLE OFF
+
+//IF VEHICLE OFF, CHECK PASSWORD
+K0:
+ACALL DINT
+MOV R5,#00H
+mov P2,#0fh ;P2.7 to P2.4 output(row) and P2.3 to P2.0 input(col)
+
+K1: 
+mov P2,#0fh
+mov a,P2
+anl a,#0fh
+mov P2,a
+mov a,P2
+anl a,#0fh
+cjne a,#0fh,K1
+
+K2:acall DELAY
+mov a,P2
+anl a,#0fh
+cjne a,#0fh,over
+sjmp K2
+
+OVER:
+acall DELAY
+mov a,P2
+anl a,#0fh
+cjne a,#0fh,over1
+sjmp k2
+
+OVER1:
+clr P2.4 ; row 1 selected
+setb P2.5
+setb P2.6
+setb P2.7
+
+mov a,P2
+anl a,#0fh
+cjne a,#0fh,ROW0
+
+clr P2.5 ; row 2 selected
+setb P2.7
+setb P2.6
+setb P2.4
+
+mov a,P2
+anl a,#0fh
+cjne a,#0fh,ROW1
+
+clr P2.6 ; row 3 selected
+setb P2.7
+setb P2.5
+setb P2.4
+
+mov a,P2
+anl a,#0fh
+cjne a,#0fh,ROW2
+
+clr P2.7 ; row 4 selected
+setb P2.4
+setb P2.6
+setb P2.5
+
+mov a,P2
+anl a,#0fh
+cjne a,#0fh,ROW3
+
+sjmp k2
+mov r0,#04h
+
+ROW0: MOV DPTR,#KCODE0
+SJMP FIND
+ROW1: MOV DPTR,#KCODE1
+SJMP FIND
+ROW2: MOV DPTR,#KCODE2
+SJMP FIND
+ROW3: MOV DPTR,#KCODE3
+FIND: RRC A
+JNC MATCH
+INC DPTR
+djnz r0,FIND
+MATCH:
+CLR A
+MOVC A,@A+DPTR
+CJNE A,#'5',RAND1
+MOV A,#'*'
+ACALL DISPLAY
+INC R5
+CJNE R5,#03H,RAND2
+SETB P3.7
+
+
+HERE1:SJMP HERE1
+
+RAND1: LJMP K0
+RAND2:LJMP K1
+
+SEND:CLR TI
+     MOV SBUF,A
+WAIT:JNB TI,WAIT
+     RET
+	 
+GET:CLR RI
+WAIT1:JNB RI,WAIT1
+     MOV A,SBUF
+	 CJNE A,#"R",GET
+	 RET	 
+	 
+	 
+
+
+DELAY1:MOV R6,#15D       
+BACK: MOV TH0,#00000000B   
+      MOV TL0,#00000000B   
+      SETB TR0             
+HERE: JNB TF0,HERE        
+      CLR TR0              
+      CLR TF0             
+      DJNZ R6,BACK
+      RET
+      
+DELAY: mov r3,#72d
+back0: mov r4,#00h
+back1: djnz r4,back1;
+		djnz r3,back0;
+
+    RET      
+      
+ DISPLAY:MOV P1,A
+    SETB RS
+    CLR RW
+    SETB E
+    CLR E
+    ACALL DELAY
+    RET     
+      
+      
+CMD: MOV P1,A
+    CLR RS
+    CLR RW
+    SETB E
+    CLR E
+    ACALL DELAY
+    RET
+
+ DINT:MOV A,#38H 
+    ACALL CMD
+	MOV A,#0FH 
+    ACALL CMD
+    MOV A,#01H 
+    ACALL CMD
+	MOV A,#01H 
+    ACALL CMD
+	MOV A,#01H 
+    ACALL CMD
+    MOV A,#06H 
+    ACALL CMD
+    MOV A,#0CH 
+    ACALL CMD
+    MOV A,#81H 
+    ACALL CMD
+    MOV A,#3CH 
+    ACALL CMD
+    RET 
+ 
+ TEXT1: MOV A,#"S"
+    ACALL DISPLAY
+    MOV A,#"E"
+    ACALL DISPLAY
+    MOV A,#"N"
+    ACALL DISPLAY
+    MOV A,#"T"
+    ACALL DISPLAY
+    MOV A,#" "
+    ACALL DISPLAY
+    MOV A,#" "
+    ACALL DISPLAY
+    MOV A,#" "
+    ACALL DISPLAY
+    RET
+
+KCODE0: DB 'D','#','0','*'
+KCODE1: DB 'C','9','8','7'
+KCODE2: DB 'B','6','5','4'
+KCODE3: DB 'A','3','2','1'	
+PASS: 	DB '5','5','5'	
+             
+ END

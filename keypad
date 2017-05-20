@@ -1,0 +1,181 @@
+org 0000h
+MOV P1,#00H
+ACALL LCD_INIT
+MOV A,#'K'
+ACALL DATAWRT
+ACALL DELAY
+mov P0,#0fh ;P0.7 to P0.4 output(row) and P0.3 to P0.0 input(col)
+
+K1:
+mov p0,#0fh
+mov a,P0
+anl a,#0fh
+mov P0,a
+mov a,P0
+anl a,#0fh
+cjne a,#0fh,K1
+
+K2:acall delay2
+mov a,P0
+anl a,#0fh
+cjne a,#0fh,over
+sjmp K2
+
+OVER:
+acall delay2
+mov a,P0
+anl a,#0fh
+cjne a,#0fh,over1
+sjmp k2
+
+OVER1:
+clr P0.4 ; row 1 selected
+setb P0.5
+setb P0.6
+setb P0.7
+
+mov a,P0
+anl a,#0fh
+cjne a,#0fh,ROW0
+
+clr P0.5 ; row 2 selected
+setb P0.7
+setb P0.6
+setb P0.4
+
+mov a,P0
+anl a,#0fh
+cjne a,#0fh,ROW1
+
+clr P0.6 ; row 3 selected
+setb P0.7
+setb P0.5
+setb P0.4
+
+mov a,P0
+anl a,#0fh
+cjne a,#0fh,ROW2
+
+clr P0.7 ; row 4 selected
+setb P0.4
+setb P0.6
+setb P0.5
+
+mov a,P0
+anl a,#0fh
+cjne a,#0fh,ROW3
+
+sjmp k2
+mov r0,#04h
+
+ROW0: MOV DPTR,#KCODE0
+SJMP FIND
+ROW1: MOV DPTR,#KCODE1
+SJMP FIND
+ROW2: MOV DPTR,#KCODE2
+SJMP FIND
+ROW3: MOV DPTR,#KCODE3
+FIND: RRC A
+JNC MATCH
+INC DPTR
+djnz r0,FIND
+MATCH:
+CLR A
+MOVC A,@A+DPTR
+ACALL DATAWRT
+LJMP K1
+
+LCD_INIT:
+
+
+; ACALL DELAY
+ACALL DELAY
+ACALL DELAY
+MOV A,#30H
+ACALL COMMD
+ACALL DELAY
+
+MOV A,#30H
+ACALL COMMD
+ACALL DELAY
+
+MOV A,#30H
+ACALL COMMD
+ACALL DELAY
+
+MOV A,#02H
+ACALL COMMD
+ACALL DELAY
+
+MOV A,#01H
+ACALL COMMD
+ACALL DELAY
+
+MOV A,#0CH
+ACALL COMMD
+ACALL DELAY
+
+MOV A,#80H
+ACALL COMMD
+ACALL DELAY
+RET
+
+COMMD: 
+MOV R4,A
+ANL A,#0F0H
+MOV P1,A ;P1 FOR LCD
+CLR P1.2 ;RS=0 COMMAND REG 
+SETB P1.3 ;ENABLE PIN
+NOP
+CLR P1.3
+ACALL DELAY
+MOV A,R4
+SWAP A
+ANL A,#0F0H
+MOV P1,A
+CLR P1.2
+SETB P1.3
+NOP
+CLR P1.3
+RET
+
+DATAWRT:
+ACALL DELAY
+MOV R4,A
+ANL A,#0F0H
+MOV P1,A
+SETB P1.2 ;RS=1
+SETB P1.3
+NOP
+CLR P1.3
+MOV A,R4
+SWAP A
+ANL A,#0F0H
+MOV P1,A
+SETB P1.2
+SETB P1.3
+NOP
+CLR P1.3
+RET
+
+DELAY:
+MOV R0,#7FH
+AGAIN:MOV R1,#0FFH
+HERE: DJNZ R1,HERE
+DJNZ R0,AGAIN
+RET
+
+DELAY2:
+MOV R0,#25H
+AGAIN2:MOV R1,#0FFH
+HERE2: DJNZ R1,HERE2
+DJNZ R0,AGAIN2
+RET
+
+
+KCODE0: DB 'A ','#','0','*'
+KCODE1: DB 'B ','9','8','7'
+KCODE2: DB 'C ','6','5','4'
+KCODE3: DB ' D','3','2','1'
+
+END
